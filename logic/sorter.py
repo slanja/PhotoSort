@@ -1,37 +1,46 @@
 import os
-from PIL import Image
-
+import datetime
 from PIL import Image
 from PIL.ExifTags import TAGS
 
 
-def get_date(path):
+def get_all_exif(path):
     try:
         with Image.open(path) as img:
             exif_data = img.getexif()
             if not exif_data:
-                return None
+                return {}
 
-            # name mapping
-            tags = {TAGS.get(tag_id, tag_id): value for tag_id, value in exif_data.items()}
+            # getting readable exif (e. g. 36867 -> 'DateTimeOriginal')
+            readable_exif = {TAGS.get(tag_id, tag_id): value for tag_id, value in exif_data.items()}
 
+            # getting more exif data
             exif_ifd = exif_data.get_ifd(0x8769)
-
             if exif_ifd:
-                tags.update({TAGS.get(tag_id, tag_id): value for tag_id, value in exif_ifd.items()})
+                readable_exif.update({TAGS.get(tag_id, tag_id): value for tag_id, value in exif_ifd.items()})
 
-            # setting priorities
-            priorities = ['DateTimeOriginal', 'DateTaken', 'DateTime', 'DateTimeDigitized']
+            return readable_exif
+    except Exception:
+        return {}
 
-            for tag in priorities:
-                if tag in tags:
-                    print(f"Found through: {tag}")
-                    return tags[tag]
 
-    except Exception as e:
-        print(f"Error occurred {path}: {e}")
+def get_date(path):
+    # getting exif from photo/video
+    exif_dict = get_all_exif(path)
 
-    return None
+    # defining priorities
+    priorities = ['DateTimeOriginal', 'DateTimeDigitized', 'DateTime']
+
+    for key in priorities:
+        value = exif_dict.get(key)
+
+        # checking if date isn't empty or null
+        if value and isinstance(value, str) and not value.startswith("0000"):
+            return value
+
+    # fallback: modification date
+    ts = os.path.getmtime(path)
+    return datetime.datetime.fromtimestamp(ts).strftime('%Y:%m')
 
 
 def move_photo(source_path, date_str, base_destination):
