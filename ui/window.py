@@ -39,7 +39,7 @@ class PhotoSorterApp:
 
         tk.Button(bottom_frame, text="📁", command=self.select_folder).pack(side="left", padx=(0, 10))
 
-        self.sort_btn = tk.Button(bottom_frame, text="Photo Sort", command=self.start_sort,
+        self.sort_btn = tk.Button(bottom_frame, text="Sort", command=self.start_sort,
                                   bg="#28a745", fg="white", font=("Arial", 10, "bold"), padx=15)
         self.sort_btn.pack(side="right")
 
